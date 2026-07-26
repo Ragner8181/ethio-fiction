@@ -12,6 +12,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+export { supabaseUrl, supabaseAnonKey };
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorage,
