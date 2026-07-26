@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { Users, ShieldCheck, BookOpen, Activity } from "lucide-react-native";
+import { Users, ShieldCheck, BookOpen } from "lucide-react-native";
 import { useTheme } from "../../theme/ThemeContext";
 import { fonts } from "../../theme/colors";
 import { Card, Chip } from "../../components/UI";
@@ -13,7 +13,10 @@ export default function StatisticsTab() {
   const [users, setUsers] = useState([]);
 
   const load = useCallback(async () => {
-    const { data } = await supabase.from("profiles").select("email, full_name, plan, plan_expires_at, created_at").order("created_at", { ascending: false });
+    const { data } = await supabase
+      .from("profiles")
+      .select("email, full_name, plan, plan_expires_at, created_at")
+      .order("created_at", { ascending: false });
     setUsers(data || []);
     const total = data?.length || 0;
     const premium = data?.filter((u) => u.plan === "premium").length || 0;
@@ -22,7 +25,7 @@ export default function StatisticsTab() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const isActive = (u) => !u.plan_expires_at || new Date(u.plan_expires_at) > new Date();
+  const isActive = (u) => u.plan !== "premium" || !u.plan_expires_at || new Date(u.plan_expires_at) > new Date();
 
   return (
     <ScrollView contentContainerStyle={{ padding: 24, gap: 20 }}>
@@ -50,15 +53,34 @@ export default function StatisticsTab() {
           <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 13, color: theme.text }}>All registered users</Text>
           <Chip label={`${counts.total} total`} tone="gold" />
         </View>
-        {users.map((u) => (
-          <View key={u.email} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8, borderTopWidth: 1, borderTopColor: theme.border }}>
-            <View>
-              <Text style={{ fontSize: 12.5, color: theme.text }}>{u.email}</Text>
-              <Text style={{ fontSize: 10.5, color: theme.muted }}>{u.plan === "premium" ? "Premium" : "Free"} · joined {new Date(u.created_at).toLocaleDateString()}</Text>
+        {users.length === 0 && (
+          <Text style={{ fontSize: 12.5, color: theme.muted, paddingVertical: 10 }}>No registered users yet.</Text>
+        )}
+        {users.map((u) => {
+          const premium = u.plan === "premium";
+          const active = isActive(u);
+          return (
+            <View key={u.email} style={{ paddingVertical: 10, borderTopWidth: 1, borderTopColor: theme.border, gap: 4 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <Text style={{ fontSize: 13, fontFamily: fonts.bodySemibold, color: theme.text, flex: 1 }}>
+                  {u.full_name || "(no name)"}
+                </Text>
+                <Chip label={active ? "Active" : "Expired"} tone={active ? "success" : "danger"} />
+              </View>
+              <Text style={{ fontSize: 12, color: theme.muted }}>{u.email}</Text>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 2 }}>
+                <Text style={{ fontSize: 10.5, color: theme.muted }}>
+                  {premium ? "Premium" : "Free"} · joined {new Date(u.created_at).toLocaleDateString()}
+                </Text>
+                {premium && u.plan_expires_at && (
+                  <Text style={{ fontSize: 10.5, color: theme.goldSoft }}>
+                    Expires {new Date(u.plan_expires_at).toLocaleDateString()}
+                  </Text>
+                )}
+              </View>
             </View>
-            <Chip label={isActive(u) ? "Active" : "Inactive"} tone={isActive(u) ? "success" : "danger"} />
-          </View>
-        ))}
+          );
+        })}
       </Card>
     </ScrollView>
   );
