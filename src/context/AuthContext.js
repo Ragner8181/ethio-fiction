@@ -38,24 +38,18 @@ export function AuthProvider({ children }) {
   // IMPORTANT: per the product spec, a new account never logs the person in
   // automatically. We sign the user back out right after registration so
   // they land on the Login screen and sign in themselves.
-  const signUp = async ({ fullName, email, password }) => {
-    const { data, error } = await supabase.auth.signUp({
+ const signUp = async ({ fullName, email, password }) => {
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName } },
     });
     if (error) return { error };
 
-    if (data.user) {
-      await supabase.from("profiles").insert({
-        id: data.user.id,
-        full_name: fullName,
-        email,
-        role: "user",
-        plan: "free",
-      });
-    }
-
+    await supabase.auth.signOut();
+    return { error: null };
+  }; 
+  
     await supabase.auth.signOut();
     return { error: null };
   };
