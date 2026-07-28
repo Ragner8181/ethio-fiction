@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, Alert, Image } from "react-native";
 import { Mail, BookOpen } from "lucide-react-native";
 import { useTheme } from "../theme/ThemeContext";
@@ -8,10 +8,16 @@ import { useAuth } from "../context/AuthContext";
 
 export default function LoginScreen({ navigation }) {
   const { theme } = useTheme();
-  const { signIn } = useAuth();
+  const { signIn, banMessage, clearBanMessage } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (banMessage) {
+      Alert.alert("Account suspended", banMessage, [{ text: "OK", onPress: clearBanMessage }]);
+    }
+  }, [banMessage]);
 
   const handleLogin = async () => {
     if (!email || !password) {
